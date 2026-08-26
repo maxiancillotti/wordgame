@@ -1,0 +1,166 @@
+openapi: 3.0.3
+info:
+  title: wordgame API
+  description: >
+    Word-guessing game API. See README.md for the full game rules, and
+    docs/adl/ for design decisions the README leaves unspecified.
+  version: "1.0"
+servers:
+  - url: http://localhost:1337
+
+security:
+  - bearerAuth: []
+    userIdHeader: []
+    userRoleHeader: []
+
+tags:
+  - name: game
+
+paths:
+  /new:
+    post:
+      tags: [game]
+      summary: Start a new game
+      description: Picks a random word and starts a new game for the caller. Request body is ignored.
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameState"
+        "400":
+          $ref: "#/components/responses/BadUserInput"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "500":
+          $ref: "#/components/responses/Internal"
+
+  /guess:
+    post:
+      tags: [game]
+      summary: Guess a letter in an ongoing game
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GuessRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameState"
+        "400":
+          $ref: "#/components/responses/BadUserInput"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/Internal"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: >
+        A fixed stub service-to-service token ("maxkit-stub-service-token"),
+        not a per-user credential - this service simulates sitting behind an
+        API gateway that has already authenticated the player and forwards
+        their identity via X-User-Id/X-User-Role below. See
+        docs/adl/0003-transport-layer-design-decisions.md.
+    userIdHeader:
+      type: apiKey
+      in: header
+      name: X-User-Id
+      description: UUID identifying the player. Trusted as already authenticated by an upstream gateway.
+    userRoleHeader:
+      type: apiKey
+      in: header
+      name: X-User-Role
+      description: Always "client" for this service - there's no real role model here, see the ADR above.
+
+  schemas:
+    GameState:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identifier for this game. Use this to make guesses.
+        current:
+          type: string
+          description: The current board state (revealed letters and underscores).
+          example: "_PP__"
+        guesses_remaining:
+          type: integer
+          description: How many wrong guesses remain before the player loses.
+          example: 6
+    GuessRequest:
+      type: object
+      required: [id, guess]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identifier for the game to guess in.
+        guess:
+          type: string
+          pattern: "^[A-Za-z]$"
+          description: A single letter A-Z.
+          example: "A"
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+        traceId:
+          type: string
+
+  responses:
+    BadUserInput:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthenticated:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Internal:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
