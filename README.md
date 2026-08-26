@@ -144,6 +144,7 @@ out", a `curl` walkthrough including every error path, and the automated
 
 This is a coding-challenge submission, not a production service. **For what
 would actually need to happen before treating it as one** — Kubernetes
-deployment, a CI/CD pipeline, and business/API-surface gaps (guess history,
+deployment, a CI/CD pipeline, a Grafana dashboard for the already-
+instrumented RED metrics, and business/API-surface gaps (guess history,
 a `status` field) — see
 [`docs/production-readiness.md`](docs/production-readiness.md).

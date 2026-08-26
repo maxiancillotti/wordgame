@@ -74,7 +74,8 @@ Layered: transport → business logic → persistence, following this repo's
   `cmd/_smoketest` checks. Start here when asked how to test this repo.
 - `docs/production-readiness.md` — this repo is a coding-challenge
   submission, not a production service; this records what would actually
-  need to happen before treating it as one (Kubernetes, CI/CD, guess-history
+  need to happen before treating it as one (Kubernetes, CI/CD, a Grafana
+  dashboard for the already-instrumented RED metrics, guess-history
   persistence, a `status` field). Nothing in it is implemented.
 
 ## Folder Structure

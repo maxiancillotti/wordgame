@@ -2,8 +2,8 @@
 
 This is a coding-challenge submission, not a production service — nothing
 below is implemented. This records what would actually need to happen before
-treating it as one, organized the way the gap was framed: infrastructure,
-delivery pipeline, and business/API surface.
+treating it as one: infrastructure, delivery pipeline, observability, and
+business/API surface.
 
 ## 1. Kubernetes deployment
 
@@ -67,7 +67,33 @@ the same targets this repo already has, on every PR:
 Branch protection requiring 1–4 (and 6) to pass before merge is the actual
 enforcement mechanism — a pipeline that runs but isn't required gets ignored.
 
-## 3. Business/API surface
+## 3. Observability
+
+The RED metrics themselves are already instrumented — `app.Serve` (maxkit)
+exposes `http_requests_total`/`http_request_duration_seconds`/
+`http_requests_in_flight`/`http_panics_total` for every route, plus
+`postgresql_queries_total`/`postgresql_query_duration_seconds`/
+`postgresql_queries_in_flight` for the database side, all at
+`GET /metrics` (see `docs/testing.md`). What's missing is anything that
+*visualizes* them:
+
+- **A Grafana dashboard.** None exists anywhere in this stack today —
+  `maxkit`'s own `dashboards/` directory is empty, so this isn't a "just
+  reuse the existing one" situation. Panels would come directly from the
+  metric names above: request rate/error-rate/p50-p95-p99 latency by route,
+  in-flight requests, DB query latency by verb/operation. Worth building
+  once, in `maxkit`, rather than per-service, since every metric name is
+  already service-agnostic (`service` is a label, not baked into the metric
+  name) — a per-service dashboard would just be that one dashboard
+  parameterized by a `service` variable.
+- **A Prometheus scrape config** to actually collect `/metrics` in the first
+  place — a `ServiceMonitor` if the cluster in §1 runs
+  kube-prometheus-stack, or a static scrape target otherwise.
+- **Alerting** (error-rate/latency thresholds, pod restarts) is a natural
+  follow-on once the dashboard exists, but shouldn't block building the
+  dashboard first — nothing to alert on without it.
+
+## 4. Business/API surface
 
 - **Persist individual guesses, not just current board state.** Right now
   `games.guessed_currently`/`games.guesses_remaining` (see

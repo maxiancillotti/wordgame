@@ -25,10 +25,29 @@ make run         # against a local Postgres, APP_ENV=local (no swagger-ui withou
 ```
 
 Either way, wordgame ends up listening on `http://localhost:1337`, with
-`/livez`, `/readyz`, and `/metrics` available immediately and `/new`/`/guess`
+the operational endpoints below available immediately and `/new`/`/guess`
 available once migrations and word seeding finish (a few seconds).
 
-## 2. swagger-ui — browse and call the API from a browser
+## 2. Operational endpoints
+
+Mounted by maxkit's `app.Serve` alongside the API itself, no auth headers
+needed:
+
+- [`http://localhost:1337/livez`](http://localhost:1337/livez) /
+  [`http://localhost:1337/readyz`](http://localhost:1337/readyz) — liveness/
+  readiness probes.
+- [`http://localhost:1337/metrics`](http://localhost:1337/metrics) —
+  Prometheus exposition format. This service is instrumented with real RED
+  metrics (rate/errors/duration), not a stub:
+  `http_requests_total{method,route,status}`,
+  `http_request_duration_seconds{method,route,status}`,
+  `http_requests_in_flight`, `http_panics_total{route}`, plus
+  `postgresql_queries_total{verb,operation,status}`,
+  `postgresql_query_duration_seconds{...}`, and
+  `postgresql_queries_in_flight` for the database side. No dashboard
+  visualizes these yet — see `docs/production-readiness.md`.
+
+## 3. swagger-ui — browse and call the API from a browser
 
 `make docker-up` also starts a `swagger-ui` container serving
 `docs/openapi.yaml` at **`http://localhost:8081`**, with a working "Try it
@@ -57,7 +76,7 @@ specifically for this — see `docs/adl/0003-*`).
 5. A guess after the game is won or lost (no `_` left, or
    `guesses_remaining` reaches 0) returns `409 Conflict`.
 
-## 3. Interactively: `curl`
+## 4. Interactively: `curl`
 
 For scripting or a quick manual check without a browser. Real gameplay, so
 which letters hit or miss depends on the actual (random) word chosen.
@@ -93,7 +112,7 @@ Worth trying by hand to see the error paths: omit a header (`401`), send a
 `X-User-Id` (`403`), guess on a nonexistent `id` (`404`), keep guessing after
 the game ends (`409`).
 
-## 4. `cmd/_smoketest` — the automated tour
+## 5. `cmd/_smoketest` — the automated tour
 
 A standalone Go program (excluded from the normal build by its leading
 underscore — see `CLAUDE.md`) that drives the running server over real HTTP
