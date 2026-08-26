@@ -1,0 +1,16 @@
+version: "2"
+
+run:
+  tests: true
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - misspell
+    - gosec
+
+issues:
+  exclude-dirs:
+    - vendor
+    - third_party
