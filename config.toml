@@ -1,0 +1,18 @@
+# Local development configuration, read from the current working directory
+# when APP_ENV=local (the default environment.Local reads config from; any
+# other value reads /etc/config/config.toml instead). Run with:
+# APP_ENV=local go run ./cmd/wordgame
+#
+# PostgreSQL credentials intentionally do NOT go here - see secrets.yaml.
+
+[infrastructure.http_server]
+host                    = "localhost"
+port                    = "1337"
+shutdown_timeout_ms     = 5000
+enable_profiler_in_prod = false
+
+[infrastructure.postgresql]
+host     = "localhost"
+port     = "5432"
+db_name  = "wordgame"
+ssl_mode = "disable"

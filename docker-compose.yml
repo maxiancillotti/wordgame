@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: wordgame
+      POSTGRES_PASSWORD: wordgame
+      POSTGRES_DB: wordgame
+    ports:
+      - "5432:5432"
+    volumes:
+      - wordgame-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wordgame"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  wordgame:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRESQL_HOST: postgres
+    ports:
+      - "1337:1337"
+    # postgres reporting "healthy" doesn't guarantee the wordgame container's
+    # own network/DNS is fully wired up yet - cmd/wordgame fails fast (by
+    # design) if its first migration attempt loses that race, so let Compose
+    # retry rather than adding startup-retry logic to the app itself.
+    restart: on-failure:5
+
+  swagger-ui:
+    image: swaggerapi/swagger-ui:v5.17.14
+    environment:
+      SWAGGER_JSON: /openapi.yaml
+    volumes:
+      - ./docs/openapi.yaml:/openapi.yaml:ro
+    ports:
+      - "8081:8080"
+    # No depends_on wordgame: this is a static UI reading the mounted spec
+    # file, not a client of the running server at container-start time -
+    # "Try it out" calls happen from the browser afterward, whenever
+    # wordgame is ready.
+
+volumes:
+  wordgame-postgres-data:

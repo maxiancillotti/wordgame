@@ -1,0 +1,6 @@
+.git
+.claude
+docs
+*.md
+config.toml
+secrets.yaml

@@ -1,0 +1,34 @@
+# Config baked into the wordgame Docker image (see ../Dockerfile). Same as
+# the repo-root config.toml used for a bare `go run`, except
+# http_server.host is "0.0.0.0" instead of "localhost" - the process needs
+# to accept connections from outside its own network namespace for
+# docker-compose's port publishing to reach it. infrastructure.postgresql.host
+# is overridden at runtime via the POSTGRESQL_HOST env var (see
+# docker-compose.yml), so the value here is irrelevant.
+#
+# PostgreSQL credentials intentionally do NOT go here - see secrets.yaml.
+
+[infrastructure.http_server]
+host                    = "0.0.0.0"
+port                    = "1337"
+shutdown_timeout_ms     = 5000
+enable_profiler_in_prod = false
+
+[infrastructure.postgresql]
+host     = "localhost"
+port     = "5432"
+db_name  = "wordgame"
+ssl_mode = "disable"
+
+# Lets swagger-ui's browser-based "Try it out" (served from a different
+# origin, http://localhost:8081, by the swagger-ui container in
+# docker-compose.yml) call this API cross-origin. allowed_headers must be
+# listed explicitly: maxkit's own default (config.CORSConfig.SetDefaults) is
+# just ["Authorization", "Content-Type"], which doesn't cover the
+# X-User-Id/X-User-Role headers this API also requires (see
+# docs/adl/0003-transport-layer-design-decisions.md) - a preflight request
+# would otherwise reject them. AllowedMethods/MaxAgeSeconds still fall back
+# to maxkit's defaults.
+[infrastructure.cors]
+allowed_origins = ["http://localhost:8081"]
+allowed_headers = ["Authorization", "Content-Type", "X-User-Id", "X-User-Role"]
